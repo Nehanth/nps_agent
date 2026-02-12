@@ -10,7 +10,6 @@ Environment variables (set via OpenShift Secret / Deployment env):
     NPS_MCP_URL             default http://localhost:3005/mcp/
     MODEL_ID                default gpt-4o
     MLFLOW_TRACKING_URI     direct MLflow route URL
-    MLFLOW_TRACKING_AUTH    set to 'kubernetes' for service account auth
     MLFLOW_EXPERIMENT_ID    MLflow experiment ID
 """
 
@@ -22,13 +21,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ---------------------------------------------------------------------------
-# MLflow auth — use Kubernetes service account token (no personal creds)
+# MLflow auth — auto-use Kubernetes service account token when running in a pod
 # ---------------------------------------------------------------------------
-if os.environ.get("MLFLOW_TRACKING_AUTH") == "kubernetes":
-    _sa_token_path = "/var/run/secrets/kubernetes.io/serviceaccount/token"
-    if os.path.exists(_sa_token_path):
-        with open(_sa_token_path) as f:
-            os.environ["MLFLOW_TRACKING_TOKEN"] = f.read().strip()
+_sa_token_path = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+if os.path.exists(_sa_token_path) and not os.environ.get("MLFLOW_TRACKING_TOKEN"):
+    with open(_sa_token_path) as f:
+        os.environ["MLFLOW_TRACKING_TOKEN"] = f.read().strip()
 
 import mlflow
 from mlflow.models import set_model

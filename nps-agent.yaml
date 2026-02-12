@@ -24,7 +24,7 @@ spec:
     type: Git
     git:
       uri: https://github.com/Nehanth/nps_agent.git
-      ref: deploy
+      ref: main
   strategy:
     type: Source
     sourceStrategy:
@@ -73,8 +73,6 @@ spec:
           env:
             - name: MLFLOW_TRACKING_URI
               value: "REPLACE_WITH_YOUR_MLFLOW_ROUTE"
-            - name: MLFLOW_TRACKING_AUTH
-              value: "kubernetes"
             - name: MLFLOW_EXPERIMENT_ID
               value: "REPLACE_WITH_YOUR_EXPERIMENT_ID"
           resources:

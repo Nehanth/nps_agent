@@ -6,6 +6,7 @@
 - `oc` CLI logged in
 - An [OpenAI API key](https://platform.openai.com/api-keys)
 - A [NPS API key](https://www.nps.gov/subjects/developer/get-started.htm)
+- Your MLflow tracking route URL
 
 ## Step 1 — Create an OpenShift project
 
@@ -15,27 +16,7 @@
 oc new-project nps-agent-[yourname]
 ```
 
-## Step 2 — Create the MLflow tracking route (if not already created)
-
-If you don't already have a route to your in-cluster MLflow, create one:
-
-```bash
-oc create route reencrypt mlflow-tracking \
-  --service=mlflow \
-  --port=8443 \
-  --insecure-policy=Redirect \
-  -n redhat-ods-applications
-```
-
-Get the route URL:
-
-```bash
-oc get route mlflow-tracking -n redhat-ods-applications -o jsonpath='{.spec.host}'
-```
-
-> **Note:** This is a known workaround and may be updated in a later RHOAI release.
-
-## Step 3 — Create the Secret with API keys
+## Step 2 — Create the Secret with API keys
 
 ```bash
 oc create secret generic nps-agent-secrets \
@@ -44,21 +25,21 @@ oc create secret generic nps-agent-secrets \
   -n nps-agent-[yourname]
 ```
 
-## Step 4 — Update nps-agent.yaml
+## Step 3 — Update nps-agent.yaml
 
 Edit the env vars in `nps-agent.yaml` to match your cluster:
 
 | Variable | What to set |
 |---|---|
-| `MLFLOW_TRACKING_URI` | Your MLflow route URL (e.g. `https://mlflow-tracking-route-redhat-ods-applications.apps.<cluster>`) |
+| `MLFLOW_TRACKING_URI` | Your MLflow tracking route URL |
 | `MLFLOW_TRACKING_AUTH` | `kubernetes` (uses pod service account — no personal creds) |
 | `MLFLOW_EXPERIMENT_ID` | Your MLflow experiment ID |
 | `image` | Replace `nps-agent-[yourname]` with your actual project name |
 
-## Step 5 — Apply the manifests
+## Step 4 — Apply the manifests
 
 ```bash
-oc apply -f nps-agent.yaml -n nps-agent-[yourname]
+oc apply -f nps-agent.yaml -n nps-agent-nehanth
 ```
 
 This creates:
@@ -68,20 +49,20 @@ This creates:
 - **Service** — internal cluster networking
 - **Route** — external HTTPS endpoint
 
-## Step 6 — Wait for the s2i build
+## Step 5 — Wait for the s2i build
 
 The BuildConfig triggers automatically. Watch the build:
 
 ```bash
-oc logs -f build/nps-agent-1 -n nps-agent-[yourname]
+oc logs -f build/nps-agent-1 -n nps-agent-nehanth
 ```
 
 Once it says `Push successful`, the image is ready.
 
-## Step 7 — Verify the pod is running
+## Step 6 — Verify the pod is running
 
 ```bash
-oc get pods -n nps-agent-[yourname]
+oc get pods -n nps-agent-nehanth
 ```
 
 You should see:
@@ -91,16 +72,16 @@ NAME                         READY   STATUS    RESTARTS   AGE
 nps-agent-xxxxxxxxx-xxxxx    1/1     Running   0          60s
 ```
 
-## Step 8 — Get the route URL
+## Step 7 — Get the route URL
 
 ```bash
 oc get route nps-agent -n nps-agent-[yourname] -o jsonpath='{.spec.host}'
 ```
 
-## Step 9 — Test the agent
+## Step 8 — Test the agent
 
 ```bash
-ROUTE=$(oc get route nps-agent -n nps-agent-[yourname] -o jsonpath='{.spec.host}')
+ROUTE=$(oc get route nps-agent -n nps-agent-nehanth -o jsonpath='{.spec.host}')
 
 curl -s -X POST "https://$ROUTE/invocations" \
   -H "Content-Type: application/json" \
@@ -108,7 +89,7 @@ curl -s -X POST "https://$ROUTE/invocations" \
   | python3 -m json.tool
 ```
 
-## Step 10 — View traces in MLflow
+## Step 9 — View traces in MLflow
 
 Open your RHOAI MLflow UI and navigate to your experiment. Every request is auto-traced and auto-evaluated by the Agent-as-a-Judge.
 
