@@ -1,17 +1,22 @@
+# NPS Agent — OpenShift manifests
+#
+# Use nps-agent-[yourname] as the project name to avoid conflicts
+# with other users on the same cluster.
+#
 # 1. Create your project:
-#    oc new-project <your-namespace>
+#    oc new-project nps-agent-[yourname]
 #
 # 2. Create secret:
 #    oc create secret generic nps-agent-secrets \
 #      --from-literal=OPENAI_API_KEY='...' \
 #      --from-literal=NPS_API_KEY='...' \
-#      -n <your-namespace>
+#      -n nps-agent-[yourname]
 #
-# 3. Edit MLFLOW_TRACKING_URI and MLFLOW_WORKSPACE below, then:
-#    oc apply -f nps-agent.yaml -n <your-namespace>
+# 3. Edit MLFLOW_TRACKING_URI, MLFLOW_WORKSPACE, and image below, then:
+#    oc apply -f nps-agent.yaml -n nps-agent-[yourname]
 #
 # 4. Set MLflow auth token:
-#    oc set env deployment/nps-agent MLFLOW_TRACKING_TOKEN="$(oc whoami -t)" -n <your-namespace>
+#    oc set env deployment/nps-agent MLFLOW_TRACKING_TOKEN="$(oc whoami -t)" -n nps-agent-[yourname]
 ---
 apiVersion: build.openshift.io/v1
 kind: BuildConfig
@@ -60,7 +65,8 @@ spec:
     spec:
       containers:
         - name: nps-agent
-          image: nps-agent:latest
+          # Replace nps-agent-[yourname] with your actual project name
+          image: image-registry.openshift-image-registry.svc:5000/nps-agent-[yourname]/nps-agent:latest
           ports:
             - containerPort: 8080
               protocol: TCP
@@ -71,7 +77,7 @@ spec:
             - name: MLFLOW_TRACKING_URI
               value: "REPLACE_WITH_YOUR_MLFLOW_URL"
             - name: MLFLOW_WORKSPACE
-              value: "REPLACE_WITH_YOUR_NAMESPACE"
+              value: "nps-agent-[yourname]"
             - name: MLFLOW_EXPERIMENT_NAME
               value: "nps-agent"
             - name: MLFLOW_TRACKING_TOKEN
