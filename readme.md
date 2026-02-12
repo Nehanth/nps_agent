@@ -27,12 +27,13 @@ curl POST /invocations
 
 | File | Purpose |
 |---|---|
-| `agent.py` | NPS agent + MLflow ResponsesAgent + Agent-as-a-Judge |
+| `agent.py` | NPS agent + MLflow ResponsesAgent |
 | `app.sh` | Entry point — starts MCP server + `mlflow models serve` |
 | `nps_mcp_server.py` | MCP server exposing NPS API tools over Streamable HTTP |
 | `requirements.txt` | Python dependencies |
 | `.s2i/environment` | s2i config (`APP_SCRIPT=app.sh`) |
 | `nps-agent.yaml` | OpenShift manifests (BuildConfig, Deployment, Service, Route) |
+| `observe/judge.py` | Agent-as-a-Judge evaluation |
 | `instructions.md` | Step-by-step deployment guide |
 
 ## API

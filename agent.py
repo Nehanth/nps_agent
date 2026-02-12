@@ -7,9 +7,8 @@ Endpoints (via app.sh → mlflow models serve):
 Environment variables (set via OpenShift Secret / Deployment env):
     OPENAI_API_KEY          (required)
     NPS_API_KEY             (required)
-    NPS_MCP_URL             default http://localhost:3005/sse/
+    NPS_MCP_URL             default http://localhost:3005/mcp/
     MODEL_ID                default gpt-4o
-    JUDGE_MODEL             default openai:/gpt-4o
     MLFLOW_TRACKING_URI     RHOAI MLflow endpoint
     MLFLOW_TRACKING_TOKEN   OpenShift auth token
     MLFLOW_WORKSPACE        RHOAI namespace
@@ -18,15 +17,12 @@ Environment variables (set via OpenShift Secret / Deployment env):
 
 import asyncio
 import os
-from typing import Literal
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
 import mlflow
-from mlflow.entities import AssessmentSource, AssessmentSourceType
-from mlflow.genai.judges import make_judge
 from mlflow.models import set_model
 from mlflow.pyfunc import ResponsesAgent
 from mlflow.types.responses import (
@@ -37,12 +33,13 @@ from mlflow.types.responses import (
 from agents import Agent, Runner
 from agents.mcp import MCPServerStreamableHttp
 
+from observe.judge import evaluate_trace
+
 # ---------------------------------------------------------------------------
 # Configuration — all via env vars, zero code changes between local and RHOAI
 # ---------------------------------------------------------------------------
 NPS_MCP_URL = os.environ.get("NPS_MCP_URL", "http://localhost:3005/mcp/")
 MODEL_ID = os.environ.get("MODEL_ID", "gpt-4o")
-JUDGE_MODEL = os.environ.get("JUDGE_MODEL", "openai:/gpt-4o")
 
 # MLflow tracing — no network calls at import time
 # Reads MLFLOW_TRACKING_URI and MLFLOW_EXPERIMENT_NAME from env vars automatically
@@ -90,49 +87,6 @@ async def run_nps_agent(prompt: str, model: str = MODEL_ID) -> str:
         )
         result = await Runner.run(agent, prompt)
         return result.final_output
-
-
-# ---------------------------------------------------------------------------
-# Agent-as-a-Judge — auto-evaluates each response
-# ---------------------------------------------------------------------------
-def create_judge():
-    """Create the Agent-as-a-Judge scorer."""
-    return make_judge(
-        name="nps_agent_evaluator",
-        instructions=(
-            "Evaluate the NPS agent's performance in {{ trace }}.\n\n"
-            "Check for:\n"
-            "1. Response Quality: Did the agent correctly identify parks "
-            "and provide accurate information?\n"
-            "2. Tool Usage: Were the correct NPS MCP tools used "
-            "(search_parks, get_park_events, etc.)?\n"
-            "3. Completeness: Did the agent answer all parts of the "
-            "user's question?\n\n"
-            "Rate as: 'good', 'acceptable', or 'poor'"
-        ),
-        feedback_value_type=Literal["good", "acceptable", "poor"],
-        model=JUDGE_MODEL,
-    )
-
-
-def evaluate_trace(trace):
-    """Run Agent-as-a-Judge evaluation and log feedback to MLflow."""
-    judge = create_judge()
-    feedback = judge(trace=trace)
-
-    mlflow.log_feedback(
-        trace_id=trace.info.trace_id,
-        name="nps_agent_evaluation",
-        value=feedback.value,
-        rationale=feedback.rationale,
-        source=AssessmentSource(
-            source_type=AssessmentSourceType.LLM_JUDGE,
-            source_id=f"agent-as-a-judge/{JUDGE_MODEL}",
-        ),
-    )
-    print(f"Evaluation: {feedback.value}")
-    print(f"Rationale:  {feedback.rationale}")
-    return feedback
 
 
 # ---------------------------------------------------------------------------
