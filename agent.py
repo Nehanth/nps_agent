@@ -35,12 +35,12 @@ from mlflow.types.responses import (
 )
 
 from agents import Agent, Runner
-from agents.mcp import MCPServerSse
+from agents.mcp import MCPServerStreamableHttp
 
 # ---------------------------------------------------------------------------
 # Configuration — all via env vars, zero code changes between local and RHOAI
 # ---------------------------------------------------------------------------
-NPS_MCP_URL = os.environ.get("NPS_MCP_URL", "http://localhost:3005/sse/")
+NPS_MCP_URL = os.environ.get("NPS_MCP_URL", "http://localhost:3005/mcp/")
 MODEL_ID = os.environ.get("MODEL_ID", "gpt-4o")
 JUDGE_MODEL = os.environ.get("JUDGE_MODEL", "openai:/gpt-4o")
 
@@ -81,7 +81,7 @@ AGENT_INSTRUCTIONS = (
 # ---------------------------------------------------------------------------
 async def run_nps_agent(prompt: str, model: str = MODEL_ID) -> str:
     """Run the NPS agent with MCP tools and return the text response."""
-    async with MCPServerSse(params={"url": NPS_MCP_URL}) as mcp_server:
+    async with MCPServerStreamableHttp(params={"url": NPS_MCP_URL}) as mcp_server:
         agent = Agent(
             name="NPS Agent",
             model=model,

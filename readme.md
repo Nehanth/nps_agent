@@ -29,7 +29,7 @@ curl POST /invocations
 |---|---|
 | `agent.py` | NPS agent + MLflow ResponsesAgent + Agent-as-a-Judge |
 | `app.sh` | Entry point — starts MCP server + `mlflow models serve` |
-| `nps_mcp_server.py` | MCP server exposing NPS API tools over SSE |
+| `nps_mcp_server.py` | MCP server exposing NPS API tools over Streamable HTTP |
 | `requirements.txt` | Python dependencies |
 | `.s2i/environment` | s2i config (`APP_SCRIPT=app.sh`) |
 | `nps-agent.yaml` | OpenShift manifests (BuildConfig, Deployment, Service, Route) |
@@ -74,7 +74,7 @@ curl POST /invocations
 |---|---|---|
 | `OPENAI_API_KEY` | Yes | OpenAI API key |
 | `NPS_API_KEY` | Yes | NPS API key |
-| `NPS_MCP_URL` | No | MCP server URL (default: `http://localhost:3005/sse/`) |
+| `NPS_MCP_URL` | No | MCP server URL (default: `http://localhost:3005/mcp/`) |
 | `MODEL_ID` | No | OpenAI model (default: `gpt-4o`) |
 | `JUDGE_MODEL` | No | Judge model (default: `openai:/gpt-4o`) |
 | `MLFLOW_TRACKING_URI` | Yes | RHOAI MLflow endpoint |

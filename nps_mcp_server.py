@@ -729,27 +729,20 @@ if __name__ == "__main__":
         mcp.run(transport="stdio")
         
     elif args.transport == "sse":
-        print("\n🌐 Transport: SSE (HTTP-based)")
-        print(f"Server will be available at: http://{args.host}:{args.port}")
+        print("\n🌐 Transport: Streamable HTTP")
+        print(f"Server will be available at: http://{args.host}:{args.port}/mcp/")
         print("Connect to it using a remote MCP client.")
-        print("\nExample usage from an agent:")
-        print(f'  Agent(server_specs="remote:http://{args.host}:{args.port}")')
-        print("\nExample test commands:")
-        print("  # Test the remote server")
-        print(f"  python openai_mcp_agent.py --server remote:http://{args.host}:{args.port}")
-        print("\n🚀 Starting SSE server...")
+        print("\n🚀 Starting HTTP server...")
         
-        # Using 'sse' transport for remote communication
-        # The newer FastMCP library supports host and port parameters
         try:
-            mcp.run(transport="sse", host=args.host, port=args.port)
+            mcp.run(transport="streamable-http", host=args.host, port=args.port)
         except Exception as e:
-            print(f"Error starting SSE server: {e}")
+            print(f"Error starting server: {e}")
             if "address already in use" in str(e).lower() or "errno 48" in str(e).lower():
                 print(f"\n💡 Port {args.port} is already in use. Try:")
                 print(f"  1. Check what's using port {args.port}: lsof -i :{args.port}")
                 print("  2. Kill the existing process: kill <PID>")
-                print("  3. Try a different port: python nps_mcp_server.py --transport sse --port <different_port>")
+                print(f"  3. Try a different port: python nps_mcp_server.py --transport sse --port <different_port>")
                 print("  4. Or use stdio mode: python nps_mcp_server.py --transport stdio")
             else:
                 print("Please check the error message above and try again.")
