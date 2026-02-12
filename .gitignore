@@ -1,0 +1,18 @@
+# Runtime / MLflow
+mlflow.db
+mlartifacts/
+mlruns/
+
+# Secrets
+.env
+
+# Logs
+*.log
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.venv/

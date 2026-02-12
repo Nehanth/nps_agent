@@ -1,0 +1,126 @@
+# 1. Create your project:
+#    oc new-project <your-namespace>
+#
+# 2. Create secret:
+#    oc create secret generic nps-agent-secrets \
+#      --from-literal=OPENAI_API_KEY='...' \
+#      --from-literal=NPS_API_KEY='...' \
+#      -n <your-namespace>
+#
+# 3. Edit MLFLOW_TRACKING_URI and MLFLOW_WORKSPACE below, then:
+#    oc apply -f nps-agent.yaml -n <your-namespace>
+#
+# 4. Set MLflow auth token:
+#    oc set env deployment/nps-agent MLFLOW_TRACKING_TOKEN="$(oc whoami -t)" -n <your-namespace>
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: nps-agent
+spec:
+  source:
+    type: Git
+    git:
+      uri: https://github.com/Nehanth/nps_agent.git
+      ref: deploy
+  strategy:
+    type: Source
+    sourceStrategy:
+      from:
+        kind: ImageStreamTag
+        namespace: openshift
+        name: python:3.12-ubi9
+  output:
+    to:
+      kind: ImageStreamTag
+      name: nps-agent:latest
+  triggers:
+    - type: ConfigChange
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: nps-agent
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nps-agent
+  labels:
+    app: nps-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nps-agent
+  template:
+    metadata:
+      labels:
+        app: nps-agent
+    spec:
+      containers:
+        - name: nps-agent
+          image: nps-agent:latest
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          envFrom:
+            - secretRef:
+                name: nps-agent-secrets
+          env:
+            - name: MLFLOW_TRACKING_URI
+              value: "REPLACE_WITH_YOUR_MLFLOW_URL"
+            - name: MLFLOW_WORKSPACE
+              value: "REPLACE_WITH_YOUR_NAMESPACE"
+            - name: MLFLOW_EXPERIMENT_NAME
+              value: "nps-agent"
+            - name: MLFLOW_TRACKING_TOKEN
+              value: "REPLACE_VIA_OC_SET_ENV"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nps-agent
+  labels:
+    app: nps-agent
+spec:
+  selector:
+    app: nps-agent
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: nps-agent
+  labels:
+    app: nps-agent
+spec:
+  to:
+    kind: Service
+    name: nps-agent
+  port:
+    targetPort: 8080
+  tls:
+    termination: edge
