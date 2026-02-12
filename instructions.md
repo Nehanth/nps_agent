@@ -5,45 +5,77 @@
 - OpenShift cluster with RHOAI and MLflow
 - `oc` CLI logged in
 - An [OpenAI API key](https://platform.openai.com/api-keys)
-- A [NPS API key](https://www.nps.gov/subjects/developer/get-started.htm)
+- A [NPS API key](https://www.nps.gov/subjects/developer/get-started.html)
 
 ## Step 1 — Create an OpenShift project
 
-> Use `nps-agent-[yourname]` to avoid conflicts with other users on the same cluster.
+Use `nps-agent-<yourname>` to avoid conflicts with other users on the same cluster.
 
 ```bash
-oc new-project nps-agent-[yourname]
+oc new-project nps-agent-<yourname>
 ```
 
 ## Step 2 — Create the Secret with API keys
 
 ```bash
+source .env
 oc create secret generic nps-agent-secrets \
-  --from-literal=OPENAI_API_KEY='your-openai-key' \
-  --from-literal=NPS_API_KEY='your-nps-key' \
-  -n nps-agent-[yourname]
+  --from-literal=OPENAI_API_KEY="$OPENAI_API_KEY" \
+  --from-literal=NPS_API_KEY="$NPS_API_KEY" \
+  -n nps-agent-<yourname>
 ```
 
-## Step 3 — Update nps-agent.yaml
+## Step 3 — Configure environment and update nps-agent.yaml
 
-Edit the env vars in `nps-agent.yaml` to match your cluster:
+### 3.1 Create your local .env file (optional, for local development)
 
-| Variable | What to set |
-|---|---|
-| `MLFLOW_TRACKING_URI` | Your RHOAI MLflow URL (e.g. `https://data-science-gateway.apps.<cluster>/mlflow/`) |
-| `MLFLOW_WORKSPACE` | Your project name (e.g. `nps-agent-[yourname]`) |
-| `MLFLOW_EXPERIMENT_NAME` | Experiment name in MLflow (default: `nps-agent`) |
+Copy the sample environment file and update it with your values:
 
-Also update the `image` field in the Deployment to match your namespace:
-
+```bash
+cp env.sample .env
 ```
-image: image-registry.openshift-image-registry.svc:5000/nps-agent-[yourname]/nps-agent:latest
+
+Edit `.env` with your actual values:
+
+| Variable | What to set | Example |
+|---|---|---|
+| `OPENAI_API_KEY` | Your OpenAI API key | `sk-proj-...` |
+| `NPS_API_KEY` | Your NPS API key | From [NPS Developer Portal](https://www.nps.gov/subjects/developer/get-started.html) |
+| `MLFLOW_TRACKING_URI` | Your RHOAI MLflow URL | `https://data-science-gateway.apps.<cluster>/mlflow/` |
+| `MLFLOW_WORKSPACE` | Your OpenShift project name | `nps-agent-<yourname>` |
+| `MLFLOW_EXPERIMENT_NAME` | Experiment name in MLflow | `nps-agent` |
+| `OPENSHIFT_NAMESPACE` | Your OpenShift project name | `nps-agent-<yourname>` |
+| `IMAGE_REGISTRY` | OpenShift image registry | `image-registry.openshift-image-registry.svc:5000` |
+
+### 3.2 Update nps-agent.yaml with your cluster values
+
+Replace the following placeholders in `nps-agent.yaml`:
+
+| Placeholder | What to replace with | Example |
+|---|---|---|
+| `<NAMESPACE>` | Your OpenShift project name | `nps-agent-<yourname>` |
+| `<MLFLOW_TRACKING_URI>` | Your RHOAI MLflow URL | `https://data-science-gateway.apps.rosa.xxxxx.openshiftapps.com/mlflow/` |
+| `<MLFLOW_WORKSPACE>` | Your OpenShift project name (typically same as namespace) | `nps-agent-<yourname>` |
+| `<MLFLOW_EXPERIMENT_NAME>` | Experiment name in MLflow | `nps-agent` |
+
+You can use a find-and-replace or use `sed`:
+
+```bash
+# Example using sed (update values as needed)
+sed -i.bak \
+  -e 's|<NAMESPACE>|nps-agent-<yourname>|g' \
+  -e 's|<MLFLOW_TRACKING_URI>|https://data-science-gateway.apps.YOUR-CLUSTER/mlflow/|g' \
+  -e 's|<MLFLOW_WORKSPACE>|nps-agent-<yourname>|g' \
+  -e 's|<MLFLOW_EXPERIMENT_NAME>|nps-agent|g' \
+  nps-agent.yaml
 ```
 
 ## Step 4 — Apply the manifests
 
+The `nps-agent.yaml` is an OpenShift Template that reads your environment variables automatically:
+
 ```bash
-oc apply -f nps-agent.yaml -n nps-agent-[yourname]
+oc apply -f nps-agent.yaml -n nps-agent-<yourname>
 ```
 
 This creates:
@@ -58,7 +90,7 @@ This creates:
 The BuildConfig triggers automatically. Watch the build:
 
 ```bash
-oc logs -f build/nps-agent-1 -n nps-agent-[yourname]
+oc logs -f build/nps-agent-1 -n nps-agent-<yourname>
 ```
 
 Once it says `Push successful`, the image is ready.
@@ -70,7 +102,7 @@ The RHOAI Data Science Gateway requires an auth token. Set it from your current 
 ```bash
 oc set env deployment/nps-agent \
   MLFLOW_TRACKING_TOKEN="$(oc whoami -t)" \
-  -n nps-agent-[yourname]
+  -n nps-agent-<yourname>
 ```
 
 > **Note:** `oc` tokens expire. Refresh with the same command when needed.
@@ -78,7 +110,7 @@ oc set env deployment/nps-agent \
 ## Step 7 — Verify the pod is running
 
 ```bash
-oc get pods -n nps-agent-[yourname]
+oc get pods -n nps-agent-<yourname>
 ```
 
 You should see:
@@ -91,13 +123,13 @@ nps-agent-xxxxxxxxx-xxxxx    1/1     Running   0          60s
 ## Step 8 — Get the route URL
 
 ```bash
-oc get route nps-agent -n nps-agent-[yourname] -o jsonpath='{.spec.host}'
+oc get route nps-agent -n nps-agent-<yourname> -o jsonpath='{.spec.host}'
 ```
 
 ## Step 9 — Test the agent
 
 ```bash
-ROUTE=$(oc get route nps-agent -n nps-agent-[yourname] -o jsonpath='{.spec.host}')
+ROUTE=$(oc get route nps-agent -n nps-agent-<yourname> -o jsonpath='{.spec.host}')
 
 curl -s -X POST "https://$ROUTE/invocations" \
   -H "Content-Type: application/json" \
@@ -114,8 +146,8 @@ Open your RHOAI MLflow UI and navigate to the `nps-agent` experiment. Every requ
 Push changes to the `deploy` branch, then:
 
 ```bash
-oc start-build nps-agent -n nps-agent-[yourname]
-oc logs -f build/nps-agent-2 -n nps-agent-[yourname]
+oc start-build nps-agent -n nps-agent-<yourname>
+oc logs -f build/nps-agent-2 -n nps-agent-<yourname>
 ```
 
 The Deployment will automatically pick up the new image.
@@ -123,7 +155,7 @@ The Deployment will automatically pick up the new image.
 ## How to delete and restart from scratch
 
 ```bash
-oc delete project nps-agent-[yourname]
+oc delete project nps-agent-<yourname>
 ```
 
 Wait for the project to fully terminate, then start over from Step 1.
