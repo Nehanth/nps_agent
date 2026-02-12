@@ -9,10 +9,9 @@ Environment variables (set via OpenShift Secret / Deployment env):
     NPS_API_KEY             (required)
     NPS_MCP_URL             default http://localhost:3005/mcp/
     MODEL_ID                default gpt-4o
-    MLFLOW_TRACKING_URI     RHOAI MLflow endpoint
-    MLFLOW_TRACKING_TOKEN   OpenShift auth token
-    MLFLOW_WORKSPACE        RHOAI namespace
-    MLFLOW_EXPERIMENT_NAME  default nps-agent
+    MLFLOW_TRACKING_URI     direct MLflow route URL
+    MLFLOW_TRACKING_AUTH    set to 'kubernetes' for service account auth
+    MLFLOW_EXPERIMENT_ID    MLflow experiment ID
 """
 
 import asyncio
@@ -21,6 +20,15 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# ---------------------------------------------------------------------------
+# MLflow auth — use Kubernetes service account token (no personal creds)
+# ---------------------------------------------------------------------------
+if os.environ.get("MLFLOW_TRACKING_AUTH") == "kubernetes":
+    _sa_token_path = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+    if os.path.exists(_sa_token_path):
+        with open(_sa_token_path) as f:
+            os.environ["MLFLOW_TRACKING_TOKEN"] = f.read().strip()
 
 import mlflow
 from mlflow.models import set_model
@@ -40,31 +48,6 @@ from observe.judge import evaluate_trace
 # ---------------------------------------------------------------------------
 NPS_MCP_URL = os.environ.get("NPS_MCP_URL", "http://localhost:3005/mcp/")
 MODEL_ID = os.environ.get("MODEL_ID", "gpt-4o")
-
-# MLflow tracing — no network calls at import time
-# Reads MLFLOW_TRACKING_URI and MLFLOW_EXPERIMENT_NAME from env vars automatically
-#
-# RHOAI workspace header (no network call, just registers a header provider)
-_workspace = os.environ.get("MLFLOW_WORKSPACE")
-if _workspace:
-    from mlflow.tracking.request_header.registry import _request_header_provider_registry
-    from mlflow.tracking.request_header.abstract_request_header_provider import (
-        RequestHeaderProvider,
-    )
-
-    if not any(
-        "WorkspaceHeader" in type(p).__name__
-        for p in _request_header_provider_registry
-    ):
-
-        class WorkspaceHeader(RequestHeaderProvider):
-            def in_context(self):
-                return True
-
-            def request_headers(self):
-                return {"X-Mlflow-Workspace": os.environ["MLFLOW_WORKSPACE"]}
-
-        _request_header_provider_registry.register(WorkspaceHeader)
 
 AGENT_INSTRUCTIONS = (
     "You are a helpful National Parks Service assistant. "

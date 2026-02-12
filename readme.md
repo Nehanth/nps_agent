@@ -78,10 +78,9 @@ curl POST /invocations
 | `NPS_MCP_URL` | No | MCP server URL (default: `http://localhost:3005/mcp/`) |
 | `MODEL_ID` | No | OpenAI model (default: `gpt-4o`) |
 | `JUDGE_MODEL` | No | Judge model (default: `openai:/gpt-4o`) |
-| `MLFLOW_TRACKING_URI` | Yes | RHOAI MLflow endpoint |
-| `MLFLOW_TRACKING_TOKEN` | Yes | OpenShift auth token |
-| `MLFLOW_WORKSPACE` | Yes | RHOAI namespace |
-| `MLFLOW_EXPERIMENT_NAME` | No | MLflow experiment (default: `nps-agent`) |
+| `MLFLOW_TRACKING_URI` | Yes | Direct MLflow route URL |
+| `MLFLOW_TRACKING_AUTH` | Yes | Set to `kubernetes` for service account auth |
+| `MLFLOW_EXPERIMENT_ID` | Yes | MLflow experiment ID |
 
 ## Deploy
 

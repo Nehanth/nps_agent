@@ -17,8 +17,6 @@ if [ -f "$SCRIPT_DIR/.env" ]; then
     set +a
 fi
 
-export MLFLOW_EXPERIMENT_NAME="${MLFLOW_EXPERIMENT_NAME:-nps-agent}"
-
 # Start MCP server in background
 echo "Starting MCP server on :$MCP_PORT"
 $PYTHON nps_mcp_server.py --transport sse --port "$MCP_PORT" &
