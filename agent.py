@@ -40,7 +40,7 @@ if os.environ.get("MLFLOW_TRACKING_AUTH") == "kubernetes":
         RequestAuthProvider,
     )
     from mlflow.tracking.request_auth.registry import (
-        RequestAuthProviderRegistry,
+        _request_auth_provider_registry,
     )
 
     _file_cache: TTLCache = TTLCache(maxsize=10, ttl=60)
@@ -104,7 +104,7 @@ if os.environ.get("MLFLOW_TRACKING_AUTH") == "kubernetes":
             return _KubernetesAuth()
 
     try:
-        RequestAuthProviderRegistry.register(_KubernetesRequestAuthProvider)
+        _request_auth_provider_registry.register(_KubernetesRequestAuthProvider)
     except Exception:
         pass  # already registered
 
