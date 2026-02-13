@@ -11,6 +11,7 @@ Environment variables (set via OpenShift Secret / Deployment env):
     MODEL_ID                default gpt-4o
     MLFLOW_TRACKING_URI     direct MLflow route URL
     MLFLOW_EXPERIMENT_ID    MLflow experiment ID
+    MLFLOW_WORKSPACE        RHOAI namespace (for X-Mlflow-Workspace header)
 """
 
 import asyncio
@@ -27,6 +28,33 @@ _sa_token_path = "/var/run/secrets/kubernetes.io/serviceaccount/token"
 if os.path.exists(_sa_token_path) and not os.environ.get("MLFLOW_TRACKING_TOKEN"):
     with open(_sa_token_path) as f:
         os.environ["MLFLOW_TRACKING_TOKEN"] = f.read().strip()
+
+# ---------------------------------------------------------------------------
+# MLflow workspace header — required by RHOAI MLflow
+# ---------------------------------------------------------------------------
+_workspace = os.environ.get("MLFLOW_WORKSPACE")
+if _workspace:
+    try:
+        from mlflow.tracking.request_auth.abstract_request_auth_provider import (
+            RequestAuthProvider,
+        )
+        from mlflow.tracking.request_auth.registry import (
+            RequestAuthProviderRegistry,
+        )
+
+        class _WorkspaceHeader(RequestAuthProvider):
+            def get_name(self):
+                return "workspace-header"
+
+            def get_token(self):
+                return None
+
+            def get_extra_headers(self):
+                return {"X-Mlflow-Workspace": _workspace}
+
+        RequestAuthProviderRegistry.register(_WorkspaceHeader)
+    except Exception:
+        pass
 
 import mlflow
 from mlflow.models import set_model
@@ -73,10 +101,22 @@ async def run_nps_agent(prompt: str, model: str = MODEL_ID) -> str:
 # ---------------------------------------------------------------------------
 # MLflow ResponsesAgent — turns the agent into an HTTP API
 # ---------------------------------------------------------------------------
+_autolog_enabled = False
+
+
 class NPSResponsesAgent(ResponsesAgent):
     """NPS Agent served via MLflow. Auto-traced + auto-evaluated."""
 
     def predict(self, request: ResponsesAgentRequest) -> ResponsesAgentResponse:
+        # Enable autolog on first real request (not during validation)
+        global _autolog_enabled
+        if not _autolog_enabled:
+            try:
+                mlflow.openai.autolog()
+            except Exception:
+                pass
+            _autolog_enabled = True
+
         user_message = self._extract_user_message(request)
         try:
             result = asyncio.run(run_nps_agent(user_message))
@@ -118,6 +158,5 @@ class NPSResponsesAgent(ResponsesAgent):
 # ---------------------------------------------------------------------------
 # MLflow model registration (required by mlflow models serve)
 # ---------------------------------------------------------------------------
-mlflow.openai.autolog()
 agent = NPSResponsesAgent()
 set_model(agent)
