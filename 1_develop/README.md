@@ -1,8 +1,28 @@
 # Develop
 
-Walks through the agent development process alongside MLflow.
+This tutorial will walk you through the agent development process with MLflow.
 
-Shows basic tracing, autologging, instrumenting an agent, and performing/storing inner loop evaluations.
+In this tutorial, you'll learn how to:
+
+- Add tracing to Python functions using the `@mlflow.trace` decorator 
+- Enable autologging to fully instrument an OpenAI Agent
+- Perform evaluations on an agent and review the results
+- Share evaluation results with expert reviewers for feedback
+
+## Prerequisites
+
+- Have access to an OpenAI-compatible endpoint from your local machine, e.g. OpenAI, vLLM, llama.cpp, Ollama, etc.
+- Have space on your device to run a local MLflow server (~5 MB)
+- Have access to a RHOAI cluster with MLflow enabled
+
+## Structure
+
+1. [**Trace**](./1_trace.ipynb): Add tracing to python functions and enable autologging
+2. [**Evaluate**](./2_evaluate.ipynb): Perform evaluations on an agent and share results with expert reviewers for feedback
+
+You are encouraged to follow these tutorials in order, but each one does stand on its own if you are only looking to learn more about a specific topic.
+
+## Goals
 
 - The viewer learns how to install MLflow and access the UI running locally.
 - The viewer learns how to instrument their agent for MLflow using any of the following:
