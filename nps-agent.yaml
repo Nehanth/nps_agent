@@ -73,10 +73,10 @@ spec:
           env:
             - name: MLFLOW_TRACKING_URI
               value: "REPLACE_WITH_YOUR_MLFLOW_ROUTE"
+            - name: MLFLOW_TRACKING_AUTH
+              value: "kubernetes"
             - name: MLFLOW_EXPERIMENT_ID
               value: "REPLACE_WITH_YOUR_EXPERIMENT_ID"
-            - name: MLFLOW_WORKSPACE
-              value: "REPLACE_WITH_YOUR_NAMESPACE"
           resources:
             requests:
               cpu: 100m
