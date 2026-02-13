@@ -24,7 +24,7 @@ spec:
     type: Git
     git:
       uri: https://github.com/Nehanth/nps_agent.git
-      ref: main
+      ref: demoprep
   strategy:
     type: Source
     sourceStrategy:
