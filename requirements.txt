@@ -4,7 +4,7 @@ starlette
 mcp
 python-dotenv
 openai-agents
-mlflow
+mlflow @ git+https://github.com/opendatahub-io/mlflow.git@master
 litellm
 kubernetes
 cachetools

@@ -15,100 +15,12 @@ Environment variables (set via OpenShift Secret / Deployment env):
 """
 
 import asyncio
-import logging
 import os
-from pathlib import Path
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# ---------------------------------------------------------------------------
-# Kubernetes auth provider for MLflow (replicates opendatahub-io/mlflow PR #110)
-# When MLFLOW_TRACKING_AUTH=kubernetes, reads SA token + namespace from the pod
-# and injects Authorization + X-MLFLOW-WORKSPACE headers on every request.
-# ---------------------------------------------------------------------------
-_SA_TOKEN_PATH = Path("/var/run/secrets/kubernetes.io/serviceaccount/token")
-_SA_NAMESPACE_PATH = Path("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
-
-_logger = logging.getLogger(__name__)
-
-if os.environ.get("MLFLOW_TRACKING_AUTH") == "kubernetes":
-    from cachetools import TTLCache
-
-    from mlflow.tracking.request_auth.abstract_request_auth_provider import (
-        RequestAuthProvider,
-    )
-    from mlflow.tracking.request_auth.registry import (
-        _request_auth_provider_registry,
-    )
-
-    _file_cache: TTLCache = TTLCache(maxsize=10, ttl=60)
-
-    def _read_cached(path: Path) -> str | None:
-        key = str(path)
-        if key in _file_cache:
-            return _file_cache[key]
-        result = None
-        try:
-            if path.exists():
-                result = path.read_text().strip() or None
-        except (OSError, PermissionError) as e:
-            _logger.debug("Could not read %s: %s", path, e)
-        _file_cache[key] = result
-        return result
-
-    class _KubernetesAuth:
-        """Callable auth — sets headers on every request."""
-
-        def __call__(self, request):
-            if (
-                "X-MLFLOW-WORKSPACE" in request.headers
-                and "Authorization" in request.headers
-            ):
-                return request
-
-            namespace = _read_cached(_SA_NAMESPACE_PATH)
-            token = _read_cached(_SA_TOKEN_PATH)
-
-            if not namespace or not token:
-                # Fallback: try kubeconfig (local dev with oc login)
-                try:
-                    from kubernetes import client, config
-
-                    config.load_kube_config()
-                    _, ctx = config.list_kube_config_contexts()
-                    namespace = (ctx or {}).get("context", {}).get("namespace")
-                    api = client.ApiClient()
-                    auth = api.default_headers.get("Authorization", "")
-                    if auth.lower().startswith("bearer "):
-                        token = auth[7:].strip()
-                except Exception:
-                    pass
-
-            if not namespace or not token:
-                _logger.warning("kubernetes auth: no credentials found")
-                return request
-
-            if "X-MLFLOW-WORKSPACE" not in request.headers:
-                request.headers["X-MLFLOW-WORKSPACE"] = namespace
-            if "Authorization" not in request.headers:
-                request.headers["Authorization"] = f"Bearer {token}"
-            return request
-
-    class _KubernetesRequestAuthProvider(RequestAuthProvider):
-        def get_name(self) -> str:
-            return "kubernetes"
-
-        def get_auth(self):
-            return _KubernetesAuth()
-
-    try:
-        _request_auth_provider_registry.register(_KubernetesRequestAuthProvider)
-    except Exception:
-        pass  # already registered
-
-# ---------------------------------------------------------------------------
 import mlflow
 from mlflow.models import set_model
 from mlflow.pyfunc import ResponsesAgent
