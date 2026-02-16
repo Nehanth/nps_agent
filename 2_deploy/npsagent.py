@@ -16,30 +16,6 @@ from agents import Agent, Runner
 from agents.mcp import MCPServerStdio
 
 # ---------------------------------------------------------------------------
-# RHOAI workspace header (required for MLflow tracing on RHOAI)
-# ---------------------------------------------------------------------------
-_workspace = os.environ.get("MLFLOW_WORKSPACE")
-if _workspace:
-    from mlflow.tracking.request_header.registry import _request_header_provider_registry
-    from mlflow.tracking.request_header.abstract_request_header_provider import (
-        RequestHeaderProvider,
-    )
-
-    if not any(
-        "WorkspaceHeader" in type(p).__name__
-        for p in _request_header_provider_registry
-    ):
-
-        class WorkspaceHeader(RequestHeaderProvider):
-            def in_context(self):
-                return True
-
-            def request_headers(self):
-                return {"X-Mlflow-Workspace": os.environ["MLFLOW_WORKSPACE"]}
-
-        _request_header_provider_registry.register(WorkspaceHeader)
-
-# ---------------------------------------------------------------------------
 # Create an NPS Agent  (same pattern as 1_develop/2_evaluate.ipynb)
 # ---------------------------------------------------------------------------
 AGENT_INSTRUCTIONS = (
