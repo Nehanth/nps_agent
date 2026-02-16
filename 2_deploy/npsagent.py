@@ -2,14 +2,16 @@ import asyncio
 import os
 
 import mlflow
-from agents import Agent, Runner, set_default_openai_client, set_default_openai_api
-from agents.mcp import MCPServerStdio
+from agents import Agent, Runner
+from agents.mcp import MCPServerSse
 from mlflow.models import set_model
 from mlflow.pyfunc import ResponsesAgent
 from mlflow.types.responses import ResponsesAgentRequest, ResponsesAgentResponse
-from openai import AsyncClient
 
 mlflow.openai.autolog()
+
+NPS_MCP_URL = os.environ.get("NPS_MCP_URL", "http://localhost:3005/sse/")
+MODEL_ID = os.environ.get("OPENAI_MODEL_NAME", "gpt-4o-mini")
 
 AGENT_INSTRUCTIONS = (
     "You are a helpful National Parks Service assistant. "
@@ -20,24 +22,13 @@ AGENT_INSTRUCTIONS = (
 
 async def run_nps_agent(prompt: str) -> str:
     """Run the NPS agent with MCP tools and return the text response."""
-    command = "uv"
-    args = ["run", "fastmcp", "run", "./nps_mcp_server.py"]
-    env = {"NPS_API_KEY": os.getenv("NPS_API_KEY")}
-    async with MCPServerStdio(params={"command": command, "args": args, "env": env}) as mcp_server:
-        # Configure OpenAI-compatible endpoint
-        async_client = AsyncClient(base_url=os.getenv("OPENAI_BASE_URL"), api_key=os.getenv("OPENAI_API_KEY"))
-        set_default_openai_client(client=async_client)
-        set_default_openai_api("chat_completions")
-
-        # Create the agent
+    async with MCPServerSse(params={"url": NPS_MCP_URL}) as mcp_server:
         agent = Agent(
             name="NPS Agent",
             instructions=AGENT_INSTRUCTIONS,
             mcp_servers=[mcp_server],
-            model=os.getenv("OPENAI_MODEL_NAME")
+            model=MODEL_ID,
         )
-
-        # Run the agent
         result = await Runner.run(agent, prompt)
         return result.final_output
 
