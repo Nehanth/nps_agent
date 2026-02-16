@@ -11,9 +11,14 @@ By following along with the tutorials in this repo, you will learn how to:
 
 ## Prerequisites
 
-For the deploy and observe steps, you will need to have the following:
+For the develop step, you will need to have the following:
+- An OpenAI-compatible endpoint from your local machine, e.g. OpenAI, vLLM, llama.cpp, Ollama, etc.
+- Space on your device to run a local MLflow server (~5 MB)
 - RHOAI version a.b.c or later, with the MLflow server enabled
+
+For the deploy and observe steps, you will need to have the following:
 - An OpenAI-compatible endpoint accessible to your cluster, e.g. OpenAI, RHAIIS, vLLM, etc.
+- RHOAI version a.b.c or later, with the MLflow server enabled
 
 ## Structure
 
