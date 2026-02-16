@@ -4,33 +4,63 @@ import os
 import nest_asyncio
 nest_asyncio.apply()
 
+from dotenv import load_dotenv
+load_dotenv()
+
 import mlflow
-from agents import Agent, Runner
-from agents.mcp import MCPServerSse
 from mlflow.models import set_model
 from mlflow.pyfunc import ResponsesAgent
 from mlflow.types.responses import ResponsesAgentRequest, ResponsesAgentResponse
 
-mlflow.openai.autolog()
+from agents import Agent, Runner
+from agents.mcp import MCPServerSse
 
+# ---------------------------------------------------------------------------
+# Configuration
+# ---------------------------------------------------------------------------
 NPS_MCP_URL = os.environ.get("NPS_MCP_URL", "http://localhost:3005/sse/")
 MODEL_ID = os.environ.get("MODEL_ID", "gpt-4o")
+
+# RHOAI workspace header (required for MLflow tracing on RHOAI)
+_workspace = os.environ.get("MLFLOW_WORKSPACE")
+if _workspace:
+    from mlflow.tracking.request_header.registry import _request_header_provider_registry
+    from mlflow.tracking.request_header.abstract_request_header_provider import (
+        RequestHeaderProvider,
+    )
+
+    if not any(
+        "WorkspaceHeader" in type(p).__name__
+        for p in _request_header_provider_registry
+    ):
+
+        class WorkspaceHeader(RequestHeaderProvider):
+            def in_context(self):
+                return True
+
+            def request_headers(self):
+                return {"X-Mlflow-Workspace": os.environ["MLFLOW_WORKSPACE"]}
+
+        _request_header_provider_registry.register(WorkspaceHeader)
 
 AGENT_INSTRUCTIONS = (
     "You are a helpful National Parks Service assistant. "
     "Use the available tools to answer questions about national parks, "
-    "events, activities, campgrounds, and visitor information. "
+    "events, activities, campgrounds, and visitor information."
 )
 
 
+# ---------------------------------------------------------------------------
+# Core agent logic
+# ---------------------------------------------------------------------------
 async def run_nps_agent(prompt: str) -> str:
     """Run the NPS agent with MCP tools and return the text response."""
     async with MCPServerSse(params={"url": NPS_MCP_URL}) as mcp_server:
         agent = Agent(
             name="NPS Agent",
+            model=MODEL_ID,
             instructions=AGENT_INSTRUCTIONS,
             mcp_servers=[mcp_server],
-            model=MODEL_ID,
         )
         result = await Runner.run(agent, prompt)
         return result.final_output
@@ -58,8 +88,14 @@ class NPSResponsesAgent(ResponsesAgent):
                 if isinstance(content, str):
                     return content
                 if isinstance(content, list):
-                    return " ".join(c.text for c in content if hasattr(c, "text"))
+                    return " ".join(
+                        c.text for c in content if hasattr(c, "text")
+                    )
         return ""
 
 
+# ---------------------------------------------------------------------------
+# MLflow model registration (autolog AFTER class defs, matching agent.py)
+# ---------------------------------------------------------------------------
+mlflow.openai.autolog()
 set_model(NPSResponsesAgent())
