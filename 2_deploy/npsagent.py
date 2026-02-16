@@ -1,6 +1,9 @@
 import asyncio
 import os
 
+import nest_asyncio
+nest_asyncio.apply()
+
 import mlflow
 from agents import Agent, Runner
 from agents.mcp import MCPServerSse
