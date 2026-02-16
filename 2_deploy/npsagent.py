@@ -16,11 +16,8 @@ from agents import Agent, Runner
 from agents.mcp import MCPServerStdio
 
 # ---------------------------------------------------------------------------
-# Configuration
-# ---------------------------------------------------------------------------
-MODEL_ID = os.environ.get("MODEL_ID", "gpt-4o")
-
 # RHOAI workspace header (required for MLflow tracing on RHOAI)
+# ---------------------------------------------------------------------------
 _workspace = os.environ.get("MLFLOW_WORKSPACE")
 if _workspace:
     from mlflow.tracking.request_header.registry import _request_header_provider_registry
@@ -42,37 +39,39 @@ if _workspace:
 
         _request_header_provider_registry.register(WorkspaceHeader)
 
+# ---------------------------------------------------------------------------
+# Create an NPS Agent  (same pattern as 1_develop/2_evaluate.ipynb)
+# ---------------------------------------------------------------------------
 AGENT_INSTRUCTIONS = (
     "You are a helpful National Parks Service assistant. "
     "Use the available tools to answer questions about national parks, "
-    "events, activities, campgrounds, and visitor information."
+    "events, activities, campgrounds, and visitor information. "
 )
 
 
-# ---------------------------------------------------------------------------
-# Core agent logic
-# ---------------------------------------------------------------------------
 async def run_nps_agent(prompt: str) -> str:
     """Run the NPS agent with MCP tools and return the text response."""
-    async with MCPServerStdio(
-        params={
-            "command": "python3",
-            "args": ["nps_mcp_server.py"],
-            "env": {**os.environ, "NPS_API_KEY": os.environ.get("NPS_API_KEY", "")},
-        }
-    ) as mcp_server:
+    # In the container, dependencies are pre-installed so we run python3 directly
+    # instead of "uv run fastmcp run ./nps_mcp_server.py"
+    command = "python3"
+    args = ["nps_mcp_server.py"]
+    env = {**os.environ, "NPS_API_KEY": os.environ.get("NPS_API_KEY", "")}
+    async with MCPServerStdio(params={"command": command, "args": args, "env": env}) as mcp_server:
+        # Create the agent
         agent = Agent(
             name="NPS Agent",
-            model=MODEL_ID,
             instructions=AGENT_INSTRUCTIONS,
             mcp_servers=[mcp_server],
+            model=os.environ.get("OPENAI_MODEL_NAME", "gpt-4o"),
         )
+
+        # Run the agent
         result = await Runner.run(agent, prompt)
         return result.final_output
 
 
 # ---------------------------------------------------------------------------
-# MLflow ResponsesAgent — wraps the agent into an HTTP API for deployment
+# MLflow ResponsesAgent — wraps run_nps_agent into an HTTP API for deployment
 # ---------------------------------------------------------------------------
 class NPSResponsesAgent(ResponsesAgent):
     def predict(self, request: ResponsesAgentRequest) -> ResponsesAgentResponse:
@@ -100,7 +99,7 @@ class NPSResponsesAgent(ResponsesAgent):
 
 
 # ---------------------------------------------------------------------------
-# MLflow model registration (autolog AFTER class defs, matching agent.py)
+# MLflow model registration
 # ---------------------------------------------------------------------------
 mlflow.openai.autolog()
 set_model(NPSResponsesAgent())
