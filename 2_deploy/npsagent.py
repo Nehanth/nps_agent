@@ -13,12 +13,11 @@ from mlflow.pyfunc import ResponsesAgent
 from mlflow.types.responses import ResponsesAgentRequest, ResponsesAgentResponse
 
 from agents import Agent, Runner
-from agents.mcp import MCPServerSse
+from agents.mcp import MCPServerStdio
 
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-NPS_MCP_URL = os.environ.get("NPS_MCP_URL", "http://localhost:3005/sse/")
 MODEL_ID = os.environ.get("MODEL_ID", "gpt-4o")
 
 # RHOAI workspace header (required for MLflow tracing on RHOAI)
@@ -55,7 +54,13 @@ AGENT_INSTRUCTIONS = (
 # ---------------------------------------------------------------------------
 async def run_nps_agent(prompt: str) -> str:
     """Run the NPS agent with MCP tools and return the text response."""
-    async with MCPServerSse(params={"url": NPS_MCP_URL}) as mcp_server:
+    async with MCPServerStdio(
+        params={
+            "command": "python3",
+            "args": ["nps_mcp_server.py"],
+            "env": {**os.environ, "NPS_API_KEY": os.environ.get("NPS_API_KEY", "")},
+        }
+    ) as mcp_server:
         agent = Agent(
             name="NPS Agent",
             model=MODEL_ID,
