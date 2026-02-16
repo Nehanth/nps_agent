@@ -12,8 +12,11 @@ from mlflow.models import set_model
 from mlflow.pyfunc import ResponsesAgent
 from mlflow.types.responses import ResponsesAgentRequest, ResponsesAgentResponse
 
-from agents import Agent, Runner
+from agents import Agent, Runner, set_default_openai_client, set_default_openai_api, set_tracing_disabled
 from agents.mcp import MCPServerStdio
+from openai import AsyncClient
+
+from judge import evaluate_trace
 
 # ---------------------------------------------------------------------------
 # Create an NPS Agent  (same pattern as 1_develop/2_evaluate.ipynb)
@@ -31,12 +34,20 @@ async def run_nps_agent(prompt: str) -> str:
     args = ["run", "fastmcp", "run", "./nps_mcp_server.py"]
     env = {**os.environ, "NPS_API_KEY": os.environ.get("NPS_API_KEY", "")}
     async with MCPServerStdio(params={"command": command, "args": args, "env": env}) as mcp_server:
+        # Configure OpenAI-compatible endpoint
+        async_client = AsyncClient(base_url=os.getenv("OPENAI_BASE_URL"), api_key=os.getenv("OPENAI_API_KEY"))
+        set_default_openai_client(client=async_client)
+        set_default_openai_api("chat_completions")
+
+        # Disable OpenAI's Tracing
+        set_tracing_disabled(disabled=True)
+
         # Create the agent
         agent = Agent(
             name="NPS Agent",
             instructions=AGENT_INSTRUCTIONS,
             mcp_servers=[mcp_server],
-            model=os.environ.get("OPENAI_MODEL_NAME", "gpt-4o"),
+            model=os.getenv("OPENAI_MODEL_NAME", "gpt-4o"),
         )
 
         # Run the agent
@@ -48,15 +59,32 @@ async def run_nps_agent(prompt: str) -> str:
 # MLflow ResponsesAgent — wraps run_nps_agent into an HTTP API for deployment
 # ---------------------------------------------------------------------------
 class NPSResponsesAgent(ResponsesAgent):
+    """NPS Agent served via MLflow. Auto-traced + auto-evaluated."""
+
     def predict(self, request: ResponsesAgentRequest) -> ResponsesAgentResponse:
         user_message = self._extract_user_message(request)
         try:
             result = asyncio.run(run_nps_agent(user_message))
         except Exception as e:
             result = f"Error: {e}"
-        return ResponsesAgentResponse(
+
+        response = ResponsesAgentResponse(
             output=[self.create_text_output_item(text=result, id="msg_1")]
         )
+
+        # Auto-evaluate with Agent-as-a-Judge
+        try:
+            traces = mlflow.search_traces(
+                order_by=["timestamp_ms DESC"],
+                max_results=1,
+                return_type="list",
+            )
+            if traces:
+                evaluate_trace(traces[0])
+        except Exception as e:
+            print(f"Judge evaluation skipped: {e}")
+
+        return response
 
     @staticmethod
     def _extract_user_message(request: ResponsesAgentRequest) -> str:
