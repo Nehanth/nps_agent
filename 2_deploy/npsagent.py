@@ -11,7 +11,7 @@ from mlflow.types.responses import ResponsesAgentRequest, ResponsesAgentResponse
 mlflow.openai.autolog()
 
 NPS_MCP_URL = os.environ.get("NPS_MCP_URL", "http://localhost:3005/sse/")
-MODEL_ID = os.environ.get("OPENAI_MODEL_NAME", "gpt-4o-mini")
+MODEL_ID = os.environ.get("MODEL_ID", "gpt-4o")
 
 AGENT_INSTRUCTIONS = (
     "You are a helpful National Parks Service assistant. "
