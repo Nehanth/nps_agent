@@ -91,8 +91,6 @@ objects:
                   value: "kubernetes"
                 - name: MLFLOW_EXPERIMENT_NAME
                   value: "${MLFLOW_EXPERIMENT_NAME}"
-                - name: MLFLOW_TRACKING_TOKEN
-                  value: "REPLACE_VIA_OC_SET_ENV"
               resources:
                 requests:
                   cpu: 100m
