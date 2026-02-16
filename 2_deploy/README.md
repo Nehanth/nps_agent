@@ -26,7 +26,7 @@ The agent logic is identical to the [Evaluate notebook](../1_develop/2_evaluate.
   OPENAI_BASE_URL=https://api.openai.com/v1
   OPENAI_MODEL_NAME=gpt-4o-mini
   NPS_API_KEY=...
-  MLFLOW_TRACKING_URI=https://data-science-gateway.apps.<cluster>/mlflow/
+  MLFLOW_TRACKING_URI=https://mlflow-tracking-route-redhat-ods-applications.apps.<cluster>
   ```
 
 ## Quick Start
@@ -35,9 +35,9 @@ Open [`deploy.ipynb`](./deploy.ipynb) and run through the steps:
 
 1. **Create an OpenShift project** — `oc new-project nps-agent-<yourname>`
 2. **Create secrets** — pushes API keys as an OpenShift Secret
-3. **Apply the template** — `oc process` creates all resources in one shot
-4. **Wait for the build** — s2i clones the repo, installs deps, builds the image
-5. **Set the MLflow auth token** — injects your `oc` token for trace routing
+3. **Grant service account access** — gives the pod admin access for MLflow auth
+4. **Apply the template** — `oc process` creates all resources in one shot
+5. **Wait for the build** — s2i clones the repo, installs deps, builds the image
 6. **Verify the pod** — check it's `Running`
 7. **Get the route URL** — grab the public HTTPS endpoint
 8. **Test the agent** — send a question to `POST /invocations`
