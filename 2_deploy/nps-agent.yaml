@@ -136,6 +136,8 @@ objects:
       namespace: ${NAMESPACE}
       labels:
         app: nps-agent
+      annotations:
+        haproxy.router.openshift.io/timeout: 300s
     spec:
       to:
         kind: Service
