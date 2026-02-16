@@ -7,3 +7,4 @@ openai-agents
 mlflow
 litellm
 nest_asyncio
+uv

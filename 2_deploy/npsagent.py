@@ -51,10 +51,8 @@ AGENT_INSTRUCTIONS = (
 
 async def run_nps_agent(prompt: str) -> str:
     """Run the NPS agent with MCP tools and return the text response."""
-    # In the container, dependencies are pre-installed so we run python3 directly
-    # instead of "uv run fastmcp run ./nps_mcp_server.py"
-    command = "python3"
-    args = ["nps_mcp_server.py"]
+    command = "uv"
+    args = ["run", "fastmcp", "run", "./nps_mcp_server.py"]
     env = {**os.environ, "NPS_API_KEY": os.environ.get("NPS_API_KEY", "")}
     async with MCPServerStdio(params={"command": command, "args": args, "env": env}) as mcp_server:
         # Create the agent
