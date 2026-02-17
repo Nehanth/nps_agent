@@ -48,7 +48,13 @@ async def run_nps_agent(prompt: str) -> str:
 # MLflow ResponsesAgent — wraps run_nps_agent into an HTTP API for deployment
 # ---------------------------------------------------------------------------
 class NPSResponsesAgent(ResponsesAgent):
+    _autolog_initialized = False
+
     def predict(self, request: ResponsesAgentRequest) -> ResponsesAgentResponse:
+        if not NPSResponsesAgent._autolog_initialized:
+            mlflow.openai.autolog()
+            NPSResponsesAgent._autolog_initialized = True
+
         user_message = self._extract_user_message(request)
         try:
             result = asyncio.run(run_nps_agent(user_message))
@@ -75,8 +81,4 @@ class NPSResponsesAgent(ResponsesAgent):
 # ---------------------------------------------------------------------------
 # MLflow model registration
 # ---------------------------------------------------------------------------
-try:
-    mlflow.openai.autolog()
-except Exception:
-    pass  # autolog fails at save_model time (trace provider not yet initialized)
 set_model(NPSResponsesAgent())
