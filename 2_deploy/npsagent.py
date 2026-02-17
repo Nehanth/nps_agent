@@ -7,13 +7,19 @@ nest_asyncio.apply()
 from dotenv import load_dotenv
 load_dotenv()
 
+from agents import Agent, Runner
+from agents.mcp import MCPServerStdio
+
+import agents.tracing as _agents_tracing
+from agents.tracing.provider import DefaultTraceProvider
+
+if _agents_tracing.GLOBAL_TRACE_PROVIDER is None:
+    _agents_tracing.GLOBAL_TRACE_PROVIDER = DefaultTraceProvider()
+
 import mlflow
 from mlflow.models import set_model
 from mlflow.pyfunc import ResponsesAgent
 from mlflow.types.responses import ResponsesAgentRequest, ResponsesAgentResponse
-
-from agents import Agent, Runner
-from agents.mcp import MCPServerStdio
 
 # ---------------------------------------------------------------------------
 # Create an NPS Agent  (same pattern as 1_develop/2_evaluate.ipynb)
@@ -48,16 +54,7 @@ async def run_nps_agent(prompt: str) -> str:
 # MLflow ResponsesAgent — wraps run_nps_agent into an HTTP API for deployment
 # ---------------------------------------------------------------------------
 class NPSResponsesAgent(ResponsesAgent):
-    _autolog_initialized = False
-
     def predict(self, request: ResponsesAgentRequest) -> ResponsesAgentResponse:
-        if not NPSResponsesAgent._autolog_initialized:
-            try:
-                mlflow.openai.autolog()
-                NPSResponsesAgent._autolog_initialized = True
-            except Exception:
-                pass  # trace provider not ready yet (save_model validation)
-
         user_message = self._extract_user_message(request)
         try:
             result = asyncio.run(run_nps_agent(user_message))
@@ -84,4 +81,5 @@ class NPSResponsesAgent(ResponsesAgent):
 # ---------------------------------------------------------------------------
 # MLflow model registration
 # ---------------------------------------------------------------------------
+mlflow.openai.autolog()
 set_model(NPSResponsesAgent())
