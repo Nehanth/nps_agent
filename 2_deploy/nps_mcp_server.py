@@ -161,10 +161,13 @@ async def search_parks(
     # Log input parameters
     get_logger().debug(f"search_parks called with inputs: state_code={state_code}, park_code={park_code}, query={query}, limit={limit}")
 
-    request: Request = get_http_request()
-    headers = dict(request.headers)
-    if headers:
-        get_logger().debug(f"tool call headers: {mask_sensitive_headers(headers)}")
+    try:
+        request: Request = get_http_request()
+        headers = dict(request.headers)
+        if headers:
+            get_logger().debug(f"tool call headers: {mask_sensitive_headers(headers)}")
+    except RuntimeError:
+        pass  # stdio transport — no HTTP request available
     
     try:
         api_key = get_api_key()
