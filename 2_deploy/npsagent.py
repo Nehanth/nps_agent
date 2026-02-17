@@ -52,8 +52,11 @@ class NPSResponsesAgent(ResponsesAgent):
 
     def predict(self, request: ResponsesAgentRequest) -> ResponsesAgentResponse:
         if not NPSResponsesAgent._autolog_initialized:
-            mlflow.openai.autolog()
-            NPSResponsesAgent._autolog_initialized = True
+            try:
+                mlflow.openai.autolog()
+                NPSResponsesAgent._autolog_initialized = True
+            except Exception:
+                pass  # trace provider not ready yet (save_model validation)
 
         user_message = self._extract_user_message(request)
         try:
