@@ -9,6 +9,39 @@ By following along with the tutorials in this repo, you will learn how to:
 - Deploy an agent to production and inference against it
 - Observe and evaluate an agent's performance in production, to catch changes in agent behavior or data drift
 
+## Quick Start
+
+### 1. Install uv (if not already installed)
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+### 2. Create virtual environment and install dependencies
+
+```bash
+cd nps_agent
+uv venv --python 3.12
+uv pip install -r requirements.txt
+```
+
+> **Note:** Python 3.10+ is required. Use `--python 3.12` (or 3.10, 3.11) to specify the version.
+
+### 3. Set up environment variables
+
+```bash
+cp env.sample .env
+# Edit .env with your API keys and settings
+```
+
+### 4. Activate the environment
+
+```bash
+source .venv/bin/activate
+```
+
+You're now ready to follow any of the tutorials below!
+
 ## Prerequisites
 
 For the develop step, you will need to have the following:

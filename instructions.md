@@ -40,10 +40,14 @@ Edit `.env` with your actual values:
 | Variable | What to set | Example |
 |---|---|---|
 | `OPENAI_API_KEY` | Your OpenAI API key | `sk-proj-...` |
+| `OPENAI_BASE_URL` | OpenAI-compatible endpoint URL | `https://api.openai.com/v1` |
+| `OPENAI_MODEL_NAME` | Model name to use | `gpt-4o or any other model` |
 | `NPS_API_KEY` | Your NPS API key | From [NPS Developer Portal](https://www.nps.gov/subjects/developer/get-started.html) |
 | `MLFLOW_TRACKING_URI` | Your RHOAI MLflow URL | `https://data-science-gateway.apps.<cluster>/mlflow/` |
 | `MLFLOW_WORKSPACE` | Your OpenShift project name | `nps-agent-<yourname>` |
 | `MLFLOW_EXPERIMENT_NAME` | Experiment name in MLflow | `nps-agent` |
+| `MLFLOW_EXPERIMENT_ID` | Experiment ID in MLflow | `0` (default experiment) |
+| `MLFLOW_TRACKING_AUTH` | MLflow auth method | `kubernetes` (for RHOAI) |
 | `OPENSHIFT_NAMESPACE` | Your OpenShift project name | `nps-agent-<yourname>` |
 | `IMAGE_REGISTRY` | OpenShift image registry | `image-registry.openshift-image-registry.svc:5000` |
 
