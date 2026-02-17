@@ -7,19 +7,13 @@ nest_asyncio.apply()
 from dotenv import load_dotenv
 load_dotenv()
 
-from agents import Agent, Runner
-from agents.mcp import MCPServerStdio
-
-import agents.tracing as _agents_tracing
-from agents.tracing.provider import DefaultTraceProvider
-
-if _agents_tracing.GLOBAL_TRACE_PROVIDER is None:
-    _agents_tracing.GLOBAL_TRACE_PROVIDER = DefaultTraceProvider()
-
 import mlflow
 from mlflow.models import set_model
 from mlflow.pyfunc import ResponsesAgent
 from mlflow.types.responses import ResponsesAgentRequest, ResponsesAgentResponse
+
+from agents import Agent, Runner
+from agents.mcp import MCPServerStdio
 
 # ---------------------------------------------------------------------------
 # Create an NPS Agent  (same pattern as 1_develop/2_evaluate.ipynb)
