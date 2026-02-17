@@ -1,4 +1,4 @@
-# Obeserve
+# Observe
 
 This tutorial will walk you through the agent observation process with MLflow.
 
