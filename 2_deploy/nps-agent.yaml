@@ -38,7 +38,7 @@ objects:
         type: Git
         git:
           uri: https://github.com/Nehanth/nps_agent.git
-          ref: extractremoved
+          ref: main
         contextDir: 2_deploy
       strategy:
         type: Source
