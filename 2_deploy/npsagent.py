@@ -28,6 +28,7 @@ AGENT_INSTRUCTIONS = (
 )
 
 
+@mlflow.trace(name="run_nps_agent")
 async def run_nps_agent(prompt: str) -> str:
     """Run the NPS agent with MCP tools and return the text response."""
     command = "uv"
@@ -72,8 +73,10 @@ class NPSResponsesAgent(ResponsesAgent):
             output=[self.create_text_output_item(text=result, id="msg_1")]
         )
 
-        # Auto-evaluate with Agent-as-a-Judge
+        # Auto-evaluate with Agent-as-a-Judge (disable autolog so the
+        # judge's own LLM calls don't create orphaned spans)
         try:
+            mlflow.openai.autolog(disable=True)
             traces = mlflow.search_traces(
                 order_by=["timestamp_ms DESC"],
                 max_results=1,
@@ -83,6 +86,8 @@ class NPSResponsesAgent(ResponsesAgent):
                 evaluate_trace(traces[0])
         except Exception as e:
             print(f"Judge evaluation skipped: {e}")
+        finally:
+            mlflow.openai.autolog()
 
         return response
 
