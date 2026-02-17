@@ -26,7 +26,7 @@ AGENT_INSTRUCTIONS = (
 )
 
 
-async def run_nps_agent(prompt: str) -> str:
+async def run_nps_agent(prompt) -> str:
     """Run the NPS agent with MCP tools and return the text response."""
     command = "uv"
     args = ["run", "fastmcp", "run", "./nps_mcp_server.py"]
@@ -57,28 +57,13 @@ async def run_nps_agent(prompt: str) -> str:
 # ---------------------------------------------------------------------------
 class NPSResponsesAgent(ResponsesAgent):
     def predict(self, request: ResponsesAgentRequest) -> ResponsesAgentResponse:
-        user_message = self._extract_user_message(request)
         try:
-            result = asyncio.run(run_nps_agent(user_message))
+            result = asyncio.run(run_nps_agent(request.input))
         except Exception as e:
             result = f"Error: {e}"
         return ResponsesAgentResponse(
             output=[self.create_text_output_item(text=result, id="msg_1")]
         )
-
-    @staticmethod
-    def _extract_user_message(request: ResponsesAgentRequest) -> str:
-        for item in reversed(request.input):
-            if hasattr(item, "role") and item.role == "user":
-                content = item.content
-                if isinstance(content, str):
-                    return content
-                if isinstance(content, list):
-                    return " ".join(
-                        c.text for c in content if hasattr(c, "text")
-                    )
-        return ""
-
 
 # ---------------------------------------------------------------------------
 # MLflow model registration
