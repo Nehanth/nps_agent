@@ -1,8 +1,27 @@
+# =============================================================================
+# NPS Agent Dependencies
+# Single requirements file for all stages: develop, deploy, observe
+# =============================================================================
+
+# MCP (Model Context Protocol) stack
 fastmcp
-httpx
-starlette
 mcp
+starlette
+httpx
+
+# Core utilities
 python-dotenv
-openai-agents
-mlflow
 litellm
+tenacity
+
+# OpenAI Agents SDK (pinned for stability)
+openai-agents==0.9.0
+
+# MLflow - ODH fork with RHOAI-specific features
+mlflow @ git+https://github.com/opendatahub-io/mlflow@master
+
+# Deployment: async event loop support
+nest_asyncio
+
+# Deployment: fast package installer for container builds
+uv
