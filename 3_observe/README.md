@@ -15,7 +15,7 @@ Complete the [Quick Start](../readme.md#quick-start) setup before running these 
 
 You will also need:
 - Access to an OpenAI-compatible LLM endpoint e.g. OpenAI, vLLM, llama.cpp, Ollama, etc.
-- Access to a RHOAI cluster with MLflow enabled
+- Access to an OpenShift AI cluster with MLflow enabled
 - A running agent application deployed on OpenShift AI
 
 ## Structure
