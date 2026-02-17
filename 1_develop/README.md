@@ -11,9 +11,12 @@ In this tutorial, you'll learn how to:
 
 ## Prerequisites
 
-- Have access to an OpenAI-compatible endpoint from your local machine, e.g. OpenAI, vLLM, llama.cpp, Ollama, etc.
-- Have space on your device to run a local MLflow server (~5 MB)
-- Have access to a RHOAI cluster with MLflow enabled
+Complete the [Quick Start](../readme.md#quick-start) setup before running these tutorials.
+
+You will also need:
+- Access to an OpenAI-compatible endpoint from your local machine, e.g. OpenAI, vLLM, llama.cpp, Ollama, etc.
+- Space on your device to run a local MLflow server (~5 MB)
+- Access to a RHOAI cluster with MLflow enabled
 
 ## Structure
 
