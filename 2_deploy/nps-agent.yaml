@@ -24,9 +24,6 @@ parameters:
   - name: MLFLOW_TRACKING_URI
     description: Your RHOAI MLflow URL (e.g., https://data-science-gateway.apps.<cluster>/mlflow/)
     required: true
-  - name: MLFLOW_WORKSPACE
-    description: MLflow workspace (typically same as NAMESPACE)
-    required: true
   - name: MLFLOW_EXPERIMENT_NAME
     description: Experiment name in MLflow
     value: nps-agent
@@ -41,7 +38,8 @@ objects:
         type: Git
         git:
           uri: https://github.com/Nehanth/nps_agent.git
-          ref: deploy
+          ref: deploydemo
+        contextDir: 2_deploy
       strategy:
         type: Source
         sourceStrategy:
@@ -89,12 +87,10 @@ objects:
               env:
                 - name: MLFLOW_TRACKING_URI
                   value: "${MLFLOW_TRACKING_URI}"
-                - name: MLFLOW_WORKSPACE
-                  value: "${MLFLOW_WORKSPACE}"
+                - name: MLFLOW_TRACKING_AUTH
+                  value: "kubernetes"
                 - name: MLFLOW_EXPERIMENT_NAME
                   value: "${MLFLOW_EXPERIMENT_NAME}"
-                - name: MLFLOW_TRACKING_TOKEN
-                  value: "REPLACE_VIA_OC_SET_ENV"
               resources:
                 requests:
                   cpu: 100m
@@ -135,6 +131,8 @@ objects:
       namespace: ${NAMESPACE}
       labels:
         app: nps-agent
+      annotations:
+        haproxy.router.openshift.io/timeout: 300s
     spec:
       to:
         kind: Service
