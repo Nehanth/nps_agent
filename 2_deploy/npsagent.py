@@ -15,13 +15,15 @@ from mlflow.types.responses import ResponsesAgentRequest, ResponsesAgentResponse
 from agents import Agent, Runner
 from agents.mcp import MCPServerStdio
 
-# Force-init the agents SDK trace provider (lazy/None in openai-agents >= 0.9)
-# so mlflow.openai.autolog() can register its processor for tool-call tracing.
+# Bridge openai-agents ↔ mlflow OpenDataHub fork:
+# The mlflow fork does `from agents.tracing import GLOBAL_TRACE_PROVIDER`, but
+# openai-agents >= 0.9 moved it to agents.tracing.setup and no longer re-exports
+# it from agents.tracing.  Calling get_trace_provider() forces lazy init, then
+# we patch the attribute onto agents.tracing so mlflow's import finds it.
 import agents.tracing as _agents_tracing
-from agents.tracing.provider import DefaultTraceProvider
+from agents.tracing import get_trace_provider
 
-if _agents_tracing.GLOBAL_TRACE_PROVIDER is None:
-    _agents_tracing.GLOBAL_TRACE_PROVIDER = DefaultTraceProvider()
+_agents_tracing.GLOBAL_TRACE_PROVIDER = get_trace_provider()
 
 # ---------------------------------------------------------------------------
 # Create an NPS Agent  (same pattern as 1_develop/2_evaluate.ipynb)
