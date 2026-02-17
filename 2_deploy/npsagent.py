@@ -75,5 +75,8 @@ class NPSResponsesAgent(ResponsesAgent):
 # ---------------------------------------------------------------------------
 # MLflow model registration
 # ---------------------------------------------------------------------------
-mlflow.openai.autolog()
+try:
+    mlflow.openai.autolog()
+except Exception:
+    pass  # autolog fails at save_model time (trace provider not yet initialized)
 set_model(NPSResponsesAgent())
