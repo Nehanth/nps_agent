@@ -13,9 +13,8 @@ from mlflow.pyfunc import ResponsesAgent
 from mlflow.types.responses import ResponsesAgentRequest, ResponsesAgentResponse
 
 from openai import AsyncClient
-from agents import Agent, Runner
+from agents import Agent, Runner, set_default_openai_client
 from agents.mcp import MCPServerStdio
-from agents import set_default_openai_client, set_default_openai_api, set_tracing_disabled
 
 # ---------------------------------------------------------------------------
 # Create an NPS Agent  (same pattern as 1_develop/2_evaluate.ipynb)
@@ -39,8 +38,6 @@ async def run_nps_agent(prompt: str) -> str:
             api_key=os.environ.get("OPENAI_API_KEY", ""),
         )
         set_default_openai_client(client=async_client)
-        set_default_openai_api("chat_completions")
-        set_tracing_disabled(disabled=True)
 
         # Create the agent
         agent = Agent(
