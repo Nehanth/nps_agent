@@ -15,7 +15,7 @@ litellm
 tenacity
 
 # OpenAI Agents SDK (pinned for stability)
-openai-agents==0.9.0
+openai-agents==0.8.4
 
 # MLflow - ODH fork with RHOAI-specific features
 mlflow @ git+https://github.com/opendatahub-io/mlflow@master
