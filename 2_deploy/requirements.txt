@@ -3,7 +3,7 @@ httpx
 starlette
 mcp
 python-dotenv
-openai-agents==0.9.0
+openai-agents==0.8.4
 mlflow @ git+https://github.com/opendatahub-io/mlflow@master
 litellm
 nest_asyncio
