@@ -39,7 +39,7 @@ objects:
         git:
           uri: https://github.com/Nehanth/nps_agent.git
           ref: main
-        contextDir: 2_deploy
+        # Build from repo root - requirements.txt at root, deploy files in 2_deploy/
       strategy:
         type: Source
         sourceStrategy:

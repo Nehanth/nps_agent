@@ -1,14 +1,31 @@
-# Deployment dependencies (used by s2i build)
-# Note: mlflow is installed separately - see comments below
+# =============================================================================
+# NPS Agent Dependencies
+# Single requirements file for all stages: develop, deploy, observe
+# =============================================================================
+
+# MCP (Model Context Protocol) stack
 fastmcp
-httpx
-starlette
 mcp
+starlette
+httpx
+
+# Core utilities
 python-dotenv
-openai-agents
 litellm
 tenacity
 
-# MLflow: The version depends on your environment:
-# - For RHOAI deployment: pip install "git+https://github.com/opendatahub-io/mlflow@master"
-# - For local development: pip install mlflow (version 3.9.0+)
+# OpenAI Agents SDK (pinned for stability)
+openai-agents==0.9.0
+
+# MLflow - ODH fork with RHOAI-specific features
+mlflow @ git+https://github.com/opendatahub-io/mlflow@master
+
+# Async event loop support for production serving
+nest_asyncio
+
+# Fast package installer for container builds
+uv
+
+# Notebook dependencies (for local development)
+ipykernel
+ipywidgets
