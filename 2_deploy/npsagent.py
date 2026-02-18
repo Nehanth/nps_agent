@@ -13,7 +13,7 @@ from mlflow.pyfunc import ResponsesAgent
 from mlflow.types.responses import ResponsesAgentRequest, ResponsesAgentResponse
 
 from openai import AsyncClient
-from agents import Agent, Runner, set_default_openai_client, set_tracing_disabled
+from agents import Agent, Runner, set_default_openai_client
 from agents.mcp import MCPServerStdio
 
 # ---------------------------------------------------------------------------
@@ -38,7 +38,6 @@ async def run_nps_agent(prompt) -> str:
             api_key=os.environ.get("OPENAI_API_KEY", ""),
         )
         set_default_openai_client(client=async_client)
-        set_tracing_disabled(disabled=True)
 
         # Create the agent
         agent = Agent(
