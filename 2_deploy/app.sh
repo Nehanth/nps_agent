@@ -24,7 +24,7 @@ MODEL_DIR=$(mktemp -d)
 
 $PYTHON -c "
 import mlflow
-mlflow.pyfunc.save_model(python_model='npsagent.py', path='$MODEL_DIR')
+mlflow.pyfunc.save_model(python_model='$SCRIPT_DIR/npsagent.py', path='$MODEL_DIR')
 "
 
 echo "Traces:    ${MLFLOW_TRACKING_URI:-(not set)}"
